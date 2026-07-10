@@ -29,8 +29,10 @@ The pipeline includes `pipeline/.env.example` as the reusable template. Copy it 
 
 Important toggles:
 
+- `SEED_BACKEND=paper_embedding_expanded` follows `category_keyword_extension_final.py`: exact paper seed centroids plus SentenceTransformer similarity over `keywords.csv`.
 - `SEED_BACKEND=paper_exact` writes only the exact paper-derived vocabulary to `seed.json`.
-- `SEED_BACKEND=tfidf`, `sentence_transformer`, and `auto` are accepted for older command compatibility, but corpus keyword expansion is disabled in the current paper-exact pipeline.
+- `SEED_BACKEND=auto` and `sentence_transformer` map to `paper_embedding_expanded`.
+- `SEED_BACKEND=tfidf` is accepted for older command compatibility, but the linked approach uses embedding expansion.
 - `CLASSIFICATION_BACKEND=tfidf` runs fast and is useful for smoke tests.
 - `CLASSIFICATION_BACKEND=sentence_transformer` forces embedding-based classification.
 - `CLASSIFICATION_BACKEND=auto` tries embeddings first, then falls back to TF-IDF.
@@ -61,7 +63,7 @@ data/cleaned_reviews/ambition_box/all_ambitionbox_reviews.csv
 Use TF-IDF classification first to validate the full flow without model downloads:
 
 ```bash
-python pipeline/main.py --max-rows 100 --seed-backend paper_exact --classification-backend tfidf
+python pipeline/main.py --max-rows 100 --seed-backend paper_embedding_expanded --classification-backend tfidf
 ```
 
 ## 5. Full Run
@@ -75,7 +77,7 @@ python pipeline/main.py
 For exact paper seeds with embedding-based classification:
 
 ```bash
-python pipeline/main.py --seed-backend paper_exact --classification-backend sentence_transformer
+python pipeline/main.py --seed-backend paper_embedding_expanded --classification-backend sentence_transformer
 ```
 
 ## 6. Expected Outputs
@@ -121,5 +123,5 @@ If `hdbscan` fails to build, continue without it for the first HR/non-HR pipelin
 Use TF-IDF mode first:
 
 ```bash
-python /kaggle/working/review_pipeline/pipeline/main.py --max-rows 100 --seed-backend paper_exact --classification-backend tfidf
+python /kaggle/working/review_pipeline/pipeline/main.py --max-rows 100 --seed-backend paper_embedding_expanded --classification-backend tfidf
 ```

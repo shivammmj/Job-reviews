@@ -34,7 +34,7 @@ def _load_seed_terms(seed_path: Path) -> dict[str, list[tuple[str, float]]]:
                 term = clean_text(entry).lower()
                 score = 1.0
             else:
-                term = clean_text(entry.get("term", "")).lower()
+                term = clean_text(entry.get("term") or entry.get("word") or "").lower()
                 score = float(entry.get("score", 1.0))
             if term:
                 terms.append((term, score))

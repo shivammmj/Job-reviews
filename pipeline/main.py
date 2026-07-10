@@ -36,9 +36,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--ambitionbox-input", default=None)
     parser.add_argument(
         "--seed-backend",
-        choices=["paper_exact", "auto", "tfidf", "sentence_transformer"],
+        choices=["paper_embedding_expanded", "paper_exact", "auto", "tfidf", "sentence_transformer"],
         default=None,
-        help="Seed creation mode. paper_exact uses only the paper-derived vocabulary.",
+        help="Seed creation mode. paper_embedding_expanded follows category_keyword_extension_final.py.",
     )
     parser.add_argument(
         "--classification-backend",

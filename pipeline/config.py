@@ -124,7 +124,7 @@ class PipelineConfig:
                 arg("seed_model_id")
                 or os.getenv("SEED_MODEL_ID", "sentence-transformers/all-MiniLM-L6-v2")
             ),
-            seed_backend=str(seed_backend_arg or os.getenv("SEED_BACKEND", "paper_exact")),
+            seed_backend=str(seed_backend_arg or os.getenv("SEED_BACKEND", "paper_embedding_expanded")),
             seed_similarity_threshold=env_float("SEED_SIMILARITY_THRESHOLD", 0.60),
             seed_top_n_per_category=env_int("SEED_TOP_N_PER_CATEGORY", 250),
             classification_backend=str(

@@ -143,23 +143,23 @@ We added toggles so the same pipeline can classify reviews in different modes.
 
 Important update:
 
-The seed vocabulary is now fixed to the exact paper-derived words. The pipeline no longer expands seed terms from corpus keywords.
+The default seed approach now follows `category_keyword_extension_final.py`: start from exact paper-derived seed terms, compute category centroids with SentenceTransformer, then add corpus keywords whose cosine similarity is above the threshold. `paper_exact` remains available for comparison.
 
 Fast mode:
 
 ```bash
-python pipeline/main.py --seed-backend paper_exact --classification-backend tfidf
+python pipeline/main.py --seed-backend paper_embedding_expanded --classification-backend tfidf
 ```
 
-This uses exact paper seeds and TF-IDF classification. It is good for testing.
+This expands paper seeds with embedding similarity and uses TF-IDF classification. It is good for testing after the small embedding model is available.
 
 Embedding mode:
 
 ```bash
-python pipeline/main.py --seed-backend paper_exact --classification-backend sentence_transformer
+python pipeline/main.py --seed-backend paper_embedding_expanded --classification-backend sentence_transformer
 ```
 
-This uses exact paper seeds and SentenceTransformer embeddings for classification.
+This uses the linked seed-expansion approach and SentenceTransformer embeddings for classification.
 
 Auto mode:
 
@@ -191,7 +191,7 @@ We tested the pipeline using 100 rows.
 Command used:
 
 ```bash
-python3 pipeline/main.py --max-rows 100 --seed-backend paper_exact --classification-backend tfidf
+python3 pipeline/main.py --max-rows 100 --seed-backend paper_embedding_expanded --classification-backend tfidf
 ```
 
 The test completed successfully.
@@ -532,25 +532,25 @@ Current paper-derived categories:
 
 What happens:
 
-The pipeline writes the exact paper vocabulary directly into `seed.json`.
+The pipeline writes the exact paper vocabulary into `seed.json` and, by default, extends it using the same embedding-centroid method used in `category_keyword_extension_final.py`.
 
 Why this matters:
 
-These words are taken from the paper framework, so the categories stay theoretically grounded and are not changed by the current dataset.
+The starting categories stay theoretically grounded because they come from the paper. The expansion step adds dataset-specific terms only when they are semantically close to a paper category.
 
 Important distinction:
 
-- `keywords.csv` is still created for corpus understanding.
-- `seed.json` is not expanded from `keywords.csv`.
-- Every seed term has source `paper_seed`.
+- `paper_exact` means no expansion; every term has source `paper_seed`.
+- `paper_embedding_expanded` means paper seeds are retained and similar `keywords.csv` terms are added with source `keyword_embedding_similarity`.
+- The default threshold is `0.60`, matching the linked script.
 
 TF-IDF mode:
 
-This compares reviews against the exact paper seed categories based on token overlap.
+This compares reviews against the generated seed categories based on token overlap.
 
 Embedding mode:
 
-This compares reviews against the exact paper seed categories using vector embeddings.
+This compares reviews against the generated seed categories using vector embeddings.
 
 Example:
 
@@ -749,13 +749,13 @@ python pipeline/main.py --max-rows 100
 Run fast TF-IDF mode:
 
 ```bash
-python pipeline/main.py --seed-backend paper_exact --classification-backend tfidf
+python pipeline/main.py --seed-backend paper_embedding_expanded --classification-backend tfidf
 ```
 
 Run embedding mode:
 
 ```bash
-python pipeline/main.py --seed-backend paper_exact --classification-backend sentence_transformer
+python pipeline/main.py --seed-backend paper_embedding_expanded --classification-backend sentence_transformer
 ```
 
 Skip splitting if split files already exist:
