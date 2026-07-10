@@ -124,7 +124,7 @@ class PipelineConfig:
                 arg("seed_model_id")
                 or os.getenv("SEED_MODEL_ID", "sentence-transformers/all-MiniLM-L6-v2")
             ),
-            seed_backend=str(seed_backend_arg or os.getenv("SEED_BACKEND", "auto")),
+            seed_backend=str(seed_backend_arg or os.getenv("SEED_BACKEND", "paper_exact")),
             seed_similarity_threshold=env_float("SEED_SIMILARITY_THRESHOLD", 0.60),
             seed_top_n_per_category=env_int("SEED_TOP_N_PER_CATEGORY", 250),
             classification_backend=str(
@@ -136,7 +136,8 @@ class PipelineConfig:
                 value.strip()
                 for value in os.getenv(
                     "HR_CATEGORY_KEYS",
-                    "workplace_environment_culture_relationships,economic_psychological_benefits",
+                    "economic_psychological_benefits,workplace_environment_culture_relationships,"
+                    "job_satisfaction,justice,employee_brand_identification",
                 ).split(",")
                 if value.strip()
             ],

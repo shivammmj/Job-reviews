@@ -137,25 +137,29 @@ Each module now handles one small job:
 
 This makes the project easier to understand and easier to extend.
 
-### Iteration 5: Add Toggle-Based Approaches
+### Iteration 5: Add Toggle-Based Classification Approaches
 
-We added toggles so the same pipeline can run in different modes.
+We added toggles so the same pipeline can classify reviews in different modes.
+
+Important update:
+
+The seed vocabulary is now fixed to the exact paper-derived words. The pipeline no longer expands seed terms from corpus keywords.
 
 Fast mode:
 
 ```bash
-python pipeline/main.py --seed-backend tfidf --classification-backend tfidf
+python pipeline/main.py --seed-backend paper_exact --classification-backend tfidf
 ```
 
-This uses TF-IDF and is good for testing.
+This uses exact paper seeds and TF-IDF classification. It is good for testing.
 
 Embedding mode:
 
 ```bash
-python pipeline/main.py --seed-backend sentence_transformer --classification-backend sentence_transformer
+python pipeline/main.py --seed-backend paper_exact --classification-backend sentence_transformer
 ```
 
-This uses SentenceTransformer embeddings and gives more semantic matching.
+This uses exact paper seeds and SentenceTransformer embeddings for classification.
 
 Auto mode:
 
@@ -163,7 +167,7 @@ Auto mode:
 python pipeline/main.py
 ```
 
-This tries embeddings first and falls back to TF-IDF if embeddings are unavailable.
+This tries embedding-based classification first and falls back to TF-IDF if embeddings are unavailable.
 
 ### Iteration 6: Add Dependency And Kaggle Support
 
@@ -187,7 +191,7 @@ We tested the pipeline using 100 rows.
 Command used:
 
 ```bash
-python3 pipeline/main.py --max-rows 100 --seed-backend tfidf --classification-backend tfidf
+python3 pipeline/main.py --max-rows 100 --seed-backend paper_exact --classification-backend tfidf
 ```
 
 The test completed successfully.
@@ -512,59 +516,41 @@ insurance
 
 These seed words help the system understand what each category means.
 
-Current base categories:
+Current paper-derived categories:
 
-- `workplace_environment_culture_relationships`
 - `economic_psychological_benefits`
-- `career_growth_learning_development`
-- `job_security_stability`
-- `work_life_balance_flexibility`
-- `role_work_product_delivery`
-- `facilities_location_operations`
+- `workplace_environment_culture_relationships`
+- `product_belief`
+- `job_satisfaction`
+- `justice`
+- `employee_brand_identification`
+- `employee_brand_love`
+- `inner_self_expressive_brands`
+- `brand_reputation`
+- `brand_authenticity`
+- `social_self_expressive_brands`
 
 What happens:
 
-The pipeline starts with manually defined base seeds.
-
-Then it reads the frequent keywords from the corpus.
-
-Then it checks which keywords are similar to which seed category.
-
-The result is saved as `seed.json`.
+The pipeline writes the exact paper vocabulary directly into `seed.json`.
 
 Why this matters:
 
-The base seed list may not contain all real words used by employees.
+These words are taken from the paper framework, so the categories stay theoretically grounded and are not changed by the current dataset.
 
-Example:
+Important distinction:
 
-Base seed:
-
-```text
-salary
-```
-
-Corpus keyword:
-
-```text
-increment
-```
-
-The system can learn that `increment` is close to salary/benefits and add it to that category.
-
-Supported methods:
-
-- TF-IDF similarity
-- SentenceTransformer embedding similarity
-- Auto fallback
+- `keywords.csv` is still created for corpus understanding.
+- `seed.json` is not expanded from `keywords.csv`.
+- Every seed term has source `paper_seed`.
 
 TF-IDF mode:
 
-This compares words and phrases based on token overlap.
+This compares reviews against the exact paper seed categories based on token overlap.
 
 Embedding mode:
 
-This compares meaning using vector embeddings.
+This compares reviews against the exact paper seed categories using vector embeddings.
 
 Example:
 
@@ -608,7 +594,7 @@ It creates score columns like:
 ```text
 score_workplace_environment_culture_relationships
 score_economic_psychological_benefits
-score_career_growth_learning_development
+score_job_satisfaction
 ```
 
 Then it calculates an `hr_score`.
@@ -763,13 +749,13 @@ python pipeline/main.py --max-rows 100
 Run fast TF-IDF mode:
 
 ```bash
-python pipeline/main.py --seed-backend tfidf --classification-backend tfidf
+python pipeline/main.py --seed-backend paper_exact --classification-backend tfidf
 ```
 
 Run embedding mode:
 
 ```bash
-python pipeline/main.py --seed-backend sentence_transformer --classification-backend sentence_transformer
+python pipeline/main.py --seed-backend paper_exact --classification-backend sentence_transformer
 ```
 
 Skip splitting if split files already exist:
