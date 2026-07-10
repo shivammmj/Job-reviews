@@ -143,7 +143,7 @@ We added toggles so the same pipeline can classify reviews in different modes.
 
 Important update:
 
-The default seed approach now follows `category_keyword_extension_final.py`: start from exact paper-derived seed terms, compute category centroids with SentenceTransformer, then add corpus keywords whose cosine similarity is above the threshold. `paper_exact` remains available for comparison.
+The default seed approach now follows `category_keyword_extension_final.py`: start from that script's category seed phrases, compute category centroids with SentenceTransformer, then add corpus keywords whose cosine similarity is above the threshold. `paper_exact` remains available for comparison.
 
 Fast mode:
 
@@ -151,7 +151,7 @@ Fast mode:
 python pipeline/main.py --seed-backend paper_embedding_expanded --classification-backend tfidf
 ```
 
-This expands paper seeds with embedding similarity and uses TF-IDF classification. It is good for testing after the small embedding model is available.
+This expands the `category_keyword_extension_final.py` seed phrases with embedding similarity and uses TF-IDF classification.
 
 Embedding mode:
 
@@ -503,20 +503,18 @@ A seed is a starting keyword that represents a topic.
 
 Example:
 
-For salary and benefits:
+For economic and psychological benefits, the linked script starts with:
 
 ```text
-salary
-pay
-compensation
-benefits
-bonus
-insurance
+work-life balance
+wellbeing
+monetary benefits
+goodies
 ```
 
 These seed words help the system understand what each category means.
 
-Current paper-derived categories:
+Current `category_keyword_extension_final.py` categories:
 
 - `economic_psychological_benefits`
 - `workplace_environment_culture_relationships`
@@ -532,16 +530,16 @@ Current paper-derived categories:
 
 What happens:
 
-The pipeline writes the exact paper vocabulary into `seed.json` and, by default, extends it using the same embedding-centroid method used in `category_keyword_extension_final.py`.
+The pipeline writes the exact category seed list from `category_keyword_extension_final.py` into `seed.json` and, by default, extends it using the same embedding-centroid method used in that script.
 
 Why this matters:
 
-The starting categories stay theoretically grounded because they come from the paper. The expansion step adds dataset-specific terms only when they are semantically close to a paper category.
+The linked script uses paper-inspired category names and a smaller hand-picked seed list. The expansion step then adds dataset-specific terms only when they are semantically close to one of those category centroids.
 
 Important distinction:
 
-- `paper_exact` means no expansion; every term has source `paper_seed`.
-- `paper_embedding_expanded` means paper seeds are retained and similar `keywords.csv` terms are added with source `keyword_embedding_similarity`.
+- `paper_exact` means no expansion; every term has source `category_keyword_extension_seed`.
+- `paper_embedding_expanded` means the script seed phrases are retained and similar `keywords.csv` terms are added with source `keyword_embedding_similarity`.
 - The default threshold is `0.60`, matching the linked script.
 
 TF-IDF mode:
@@ -554,9 +552,9 @@ This compares reviews against the generated seed categories using vector embeddi
 
 Example:
 
-TF-IDF may understand `salary increment` because it shares `salary`.
+If `keywords.csv` contains `work life balance`, the embedding step can attach it to `economic_psychological_benefits` because it is close to `work-life balance`.
 
-Embeddings may also understand that `pay raise` is related even if it does not use the exact same words.
+If `keywords.csv` contains `team`, the embedding step can attach it to `workplace_environment_culture_relationships` because it is close to workplace/culture seed phrases.
 
 ## 10. Step 5: Review Classification
 
@@ -604,17 +602,19 @@ Current default HR categories:
 ```text
 workplace_environment_culture_relationships
 economic_psychological_benefits
+job_satisfaction
+justice
+employee_brand_identification
 ```
 
 This means a review is considered HR-related if it strongly talks about:
 
 - culture
-- managers
-- people
-- salary
-- benefits
-- stress
-- work environment
+- work-life balance
+- wellbeing
+- job satisfaction
+- fairness or justice
+- employee identification or family-like belonging
 
 The final label is stored in:
 
@@ -678,9 +678,9 @@ It depends more on exact words.
 
 Example:
 
-It can easily connect `salary` with `salary increment`.
+It can easily connect `work-life balance` with `work life balance`.
 
-It may not always connect `pay raise` with `compensation` unless similar words appear.
+It may not always connect `friendly atmosphere` with `supportive environment` unless similar words appear.
 
 ### SentenceTransformer Embeddings
 
@@ -703,9 +703,9 @@ Example:
 Embeddings can understand that these are similar:
 
 ```text
-good salary
-better compensation
-pay is strong
+work-life balance
+healthy wellbeing
+good workplace environment
 ```
 
 ## 12. Thresholds
@@ -914,14 +914,14 @@ Recommended next work:
 Input review:
 
 ```text
-The salary is good and managers are supportive.
+The work-life balance is good and the workplace environment is friendly.
 ```
 
 Step-by-step:
 
 1. The review comes from either Pros, Cons, Likes, or Dislikes.
 2. It is cleaned.
-3. Keywords like `salary`, `managers`, and `supportive` are detected.
+3. Keywords like `work-life balance`, `workplace environment`, and `friendly` are detected.
 4. These words match HR seed categories.
 5. The review gets high HR-related score.
 6. Final output becomes `HR`.

@@ -29,8 +29,8 @@ The pipeline includes `pipeline/.env.example` as the reusable template. Copy it 
 
 Important toggles:
 
-- `SEED_BACKEND=paper_embedding_expanded` follows `category_keyword_extension_final.py`: exact paper seed centroids plus SentenceTransformer similarity over `keywords.csv`.
-- `SEED_BACKEND=paper_exact` writes only the exact paper-derived vocabulary to `seed.json`.
+- `SEED_BACKEND=paper_embedding_expanded` follows `category_keyword_extension_final.py`: category seed centroids plus SentenceTransformer similarity over `keywords.csv`.
+- `SEED_BACKEND=paper_exact` writes only the exact category seed list from `category_keyword_extension_final.py` to `seed.json`.
 - `SEED_BACKEND=auto` and `sentence_transformer` map to `paper_embedding_expanded`.
 - `SEED_BACKEND=tfidf` is accepted for older command compatibility, but the linked approach uses embedding expansion.
 - `CLASSIFICATION_BACKEND=tfidf` runs fast and is useful for smoke tests.
@@ -74,7 +74,7 @@ For the default full run:
 python pipeline/main.py
 ```
 
-For exact paper seeds with embedding-based classification:
+For category-keyword extension seeds with embedding-based classification:
 
 ```bash
 python pipeline/main.py --seed-backend paper_embedding_expanded --classification-backend sentence_transformer
