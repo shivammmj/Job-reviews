@@ -10,10 +10,24 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 try:
     from .config import PipelineConfig
-    from .utils import batched, clean_text, detect_text_column, ensure_dir, read_json
+    from .utils import (
+        batched,
+        configure_quiet_model_loading,
+        clean_text,
+        detect_text_column,
+        ensure_dir,
+        read_json,
+    )
 except ImportError:  # pragma: no cover
     from config import PipelineConfig
-    from utils import batched, clean_text, detect_text_column, ensure_dir, read_json
+    from utils import (
+        batched,
+        configure_quiet_model_loading,
+        clean_text,
+        detect_text_column,
+        ensure_dir,
+        read_json,
+    )
 
 
 @dataclass
@@ -49,6 +63,7 @@ def _build_sentence_scorer(
     categories: dict[str, list[tuple[str, float]]],
     config: PipelineConfig,
 ) -> SentenceScorer:
+    configure_quiet_model_loading()
     from sentence_transformers import SentenceTransformer
 
     model = SentenceTransformer(config.seed_model_id)

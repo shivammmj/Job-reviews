@@ -125,3 +125,24 @@ def unique_preserve_order(values: Iterable[str]) -> list[str]:
             seen.add(text)
             output.append(text)
     return output
+
+
+def configure_quiet_model_loading() -> None:
+    """Reduce Hugging Face progress/log noise during embedding model loading."""
+    os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
+    os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+    os.environ.setdefault("TRANSFORMERS_VERBOSITY", "error")
+
+    try:
+        from huggingface_hub.utils import disable_progress_bars
+
+        disable_progress_bars()
+    except Exception:
+        pass
+
+    try:
+        from transformers.utils import logging as transformers_logging
+
+        transformers_logging.set_verbosity_error()
+    except Exception:
+        pass

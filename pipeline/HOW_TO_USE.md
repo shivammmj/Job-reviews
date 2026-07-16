@@ -11,7 +11,7 @@ pip install --upgrade pip
 pip install -r pipeline/requirements.txt
 ```
 
-Optional UMAP/HDBSCAN dependencies for later visualization and density clustering:
+Optional UMAP/HDBSCAN dependencies for the `--run-clustering` stage:
 
 ```bash
 pip install -r pipeline/requirements-optional.txt
@@ -40,6 +40,10 @@ Important toggles:
 - `TFIDF_CLASSIFICATION_THRESHOLD` is used for TF-IDF classification because TF-IDF cosine scores are usually smaller.
 - `HR_CATEGORY_KEYS` controls which category scores make a review `HR`.
 - `MAX_ROWS=0` means full dataset; use a small number for testing.
+- `RUN_CLUSTERING=false` keeps clustering off by default; pass `--run-clustering` when you want final Non-HR clusters.
+- `CLUSTER_REDUCER=umap` uses UMAP before clustering.
+- `CLUSTER_ALGORITHM=hdbscan` uses HDBSCAN for organic clustering.
+- `CLUSTER_MIN_CLUSTER_SIZE` controls the smallest allowed cluster.
 - `LLAMA_ENABLED=false` is reserved for the later Llama validation/labeling step.
 
 ## 3. Place Input Files
@@ -66,6 +70,12 @@ Use TF-IDF classification first to validate the full flow without model download
 python pipeline/main.py --max-rows 100 --seed-backend paper_embedding_expanded --classification-backend tfidf
 ```
 
+Smoke test including Non-HR clustering:
+
+```bash
+python pipeline/main.py --max-rows 100 --seed-backend paper_embedding_expanded --classification-backend tfidf --run-clustering
+```
+
 ## 5. Full Run
 
 For the default full run:
@@ -78,6 +88,12 @@ For category-keyword extension seeds with embedding-based classification:
 
 ```bash
 python pipeline/main.py --seed-backend paper_embedding_expanded --classification-backend sentence_transformer
+```
+
+For the full pipeline including final Non-HR clustering:
+
+```bash
+python pipeline/main.py --seed-backend paper_embedding_expanded --classification-backend sentence_transformer --run-clustering
 ```
 
 ## 6. Expected Outputs
@@ -104,6 +120,17 @@ pipeline/data/outputs/dislikes_am_classified.csv
 
 The classified files contain the original review text, metadata, category scores, and final `classification` value (`HR` or `Non HR`).
 
+Clustered Non-HR files:
+
+```text
+pipeline/data/outputs/pros_gd_non_hr_clustered.csv
+pipeline/data/outputs/cons_gd_non_hr_clustered.csv
+pipeline/data/outputs/likes_am_non_hr_clustered.csv
+pipeline/data/outputs/dislikes_am_non_hr_clustered.csv
+```
+
+The clustered files contain only `Non HR` rows and include `cluster_id`, `cluster_size`, `is_cluster_noise`, `cluster_x`, and `cluster_y`.
+
 ## 7. Kaggle Notes
 
 On Kaggle, install core dependencies in a notebook cell:
@@ -112,16 +139,22 @@ On Kaggle, install core dependencies in a notebook cell:
 pip install -r /kaggle/working/review_pipeline/pipeline/requirements.txt
 ```
 
-Install optional clustering dependencies only when you reach the UMAP/HDBSCAN stage:
+Install optional clustering dependencies only when you want to run `--run-clustering`:
 
 ```bash
 pip install -r /kaggle/working/review_pipeline/pipeline/requirements-optional.txt
 ```
 
-If `hdbscan` fails to build, continue without it for the first HR/non-HR pipeline run. It is only needed for the later density-clustering stage.
+If `hdbscan` fails to build, continue without it for the first HR/Non-HR pipeline run. It is only needed when final Non-HR clustering is enabled.
 
 Use TF-IDF mode first:
 
 ```bash
 python /kaggle/working/review_pipeline/pipeline/main.py --max-rows 100 --seed-backend paper_embedding_expanded --classification-backend tfidf
+```
+
+Then test clustering:
+
+```bash
+python /kaggle/working/review_pipeline/pipeline/main.py --max-rows 100 --seed-backend paper_embedding_expanded --classification-backend tfidf --run-clustering
 ```

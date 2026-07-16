@@ -55,6 +55,16 @@ class PipelineConfig:
     spacy_model: str
     llama_enabled: bool
     llama_model_id: str
+    run_clustering: bool
+    cluster_embedding_model_id: str
+    cluster_reducer: str
+    cluster_algorithm: str
+    cluster_umap_components: int
+    cluster_umap_neighbors: int
+    cluster_umap_min_dist: float
+    cluster_min_cluster_size: int
+    cluster_min_samples: int
+    cluster_random_state: int
 
     @classmethod
     def from_args(cls, args: object | None = None) -> "PipelineConfig":
@@ -104,6 +114,13 @@ class PipelineConfig:
         max_rows_arg = arg("max_rows")
         seed_backend_arg = arg("seed_backend")
         classification_backend_arg = arg("classification_backend")
+        run_clustering_arg = arg("run_clustering")
+        skip_clustering_arg = arg("skip_clustering")
+        run_clustering = env_bool("RUN_CLUSTERING", False)
+        if run_clustering_arg:
+            run_clustering = True
+        if skip_clustering_arg:
+            run_clustering = False
 
         config = cls(
             root_dir=root_dir,
@@ -148,6 +165,31 @@ class PipelineConfig:
                 arg("llama_model_id")
                 or os.getenv("LLAMA_MODEL_ID", "meta-llama/Llama-3.1-8B-Instruct")
             ),
+            run_clustering=run_clustering,
+            cluster_embedding_model_id=str(
+                arg("cluster_embedding_model_id")
+                or os.getenv("CLUSTER_EMBEDDING_MODEL_ID", "sentence-transformers/all-MiniLM-L6-v2")
+            ),
+            cluster_reducer=str(arg("cluster_reducer") or os.getenv("CLUSTER_REDUCER", "umap")),
+            cluster_algorithm=str(arg("cluster_algorithm") or os.getenv("CLUSTER_ALGORITHM", "hdbscan")),
+            cluster_umap_components=int(
+                arg("cluster_umap_components") or env_int("CLUSTER_UMAP_COMPONENTS", 10)
+            ),
+            cluster_umap_neighbors=int(
+                arg("cluster_umap_neighbors") or env_int("CLUSTER_UMAP_NEIGHBORS", 15)
+            ),
+            cluster_umap_min_dist=float(
+                arg("cluster_umap_min_dist") or env_float("CLUSTER_UMAP_MIN_DIST", 0.0)
+            ),
+            cluster_min_cluster_size=int(
+                arg("cluster_min_cluster_size") or env_int("CLUSTER_MIN_CLUSTER_SIZE", 15)
+            ),
+            cluster_min_samples=int(
+                arg("cluster_min_samples") or env_int("CLUSTER_MIN_SAMPLES", 5)
+            ),
+            cluster_random_state=int(
+                arg("cluster_random_state") or env_int("CLUSTER_RANDOM_STATE", 42)
+            ),
         )
 
         for directory in [
@@ -177,3 +219,21 @@ class PipelineConfig:
     @property
     def seed_path(self) -> Path:
         return self.intermediate_dir / "seed.json"
+
+    @property
+    def classified_paths(self) -> dict[str, Path]:
+        return {
+            "pros_gd": self.output_dir / "pros_gd_classified.csv",
+            "cons_gd": self.output_dir / "cons_gd_classified.csv",
+            "likes_am": self.output_dir / "likes_am_classified.csv",
+            "dislikes_am": self.output_dir / "dislikes_am_classified.csv",
+        }
+
+    @property
+    def clustered_paths(self) -> dict[str, Path]:
+        return {
+            "pros_gd": self.output_dir / "pros_gd_non_hr_clustered.csv",
+            "cons_gd": self.output_dir / "cons_gd_non_hr_clustered.csv",
+            "likes_am": self.output_dir / "likes_am_non_hr_clustered.csv",
+            "dislikes_am": self.output_dir / "dislikes_am_non_hr_clustered.csv",
+        }

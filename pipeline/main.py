@@ -8,6 +8,7 @@ from pathlib import Path
 
 try:
     from .classify_reviews import classify_review_files
+    from .cluster_reviews import cluster_review_files
     from .config import PipelineConfig
     from .nlp_keyword_extraction import extract_keywords
     from .seed_expansion import create_seed_json
@@ -15,6 +16,7 @@ try:
     from .utils import write_json
 except ImportError:  # pragma: no cover - supports python pipeline/main.py
     from classify_reviews import classify_review_files
+    from cluster_reviews import cluster_review_files
     from config import PipelineConfig
     from nlp_keyword_extraction import extract_keywords
     from seed_expansion import create_seed_json
@@ -49,6 +51,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed-model-id", default=None)
     parser.add_argument("--spacy-model", default=None)
     parser.add_argument("--llama-model-id", default=None)
+    parser.add_argument("--run-clustering", action="store_true", help="Cluster Non HR rows after classification.")
+    parser.add_argument("--skip-clustering", action="store_true")
+    parser.add_argument("--cluster-embedding-model-id", default=None)
+    parser.add_argument("--cluster-reducer", choices=["auto", "umap", "pca"], default=None)
+    parser.add_argument("--cluster-algorithm", choices=["auto", "hdbscan", "dbscan", "kmeans"], default=None)
+    parser.add_argument("--cluster-umap-components", type=int, default=None)
+    parser.add_argument("--cluster-umap-neighbors", type=int, default=None)
+    parser.add_argument("--cluster-umap-min-dist", type=float, default=None)
+    parser.add_argument("--cluster-min-cluster-size", type=int, default=None)
+    parser.add_argument("--cluster-min-samples", type=int, default=None)
+    parser.add_argument("--cluster-random-state", type=int, default=None)
     parser.add_argument("--skip-split", action="store_true")
     parser.add_argument("--skip-keywords", action="store_true")
     parser.add_argument("--skip-seed", action="store_true")
@@ -88,6 +101,7 @@ def _write_manifest(
     keywords_path: Path,
     seed_path: Path,
     classified_paths: dict[str, Path],
+    clustered_paths: dict[str, Path],
 ) -> Path:
     payload = {
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -99,6 +113,7 @@ def _write_manifest(
         "keywords_path": str(keywords_path),
         "seed_path": str(seed_path),
         "classified_paths": {key: str(value) for key, value in classified_paths.items()},
+        "clustered_paths": {key: str(value) for key, value in clustered_paths.items()},
     }
     manifest_path = config.report_dir / "pipeline_run_manifest.json"
     write_json(manifest_path, payload)
@@ -115,6 +130,7 @@ def main() -> None:
     print(f"[pipeline] max_rows={config.max_rows or 'full'}")
     print(f"[pipeline] seed_backend={config.seed_backend}")
     print(f"[pipeline] classification_backend={config.classification_backend}")
+    print(f"[pipeline] run_clustering={config.run_clustering}")
 
     if args.skip_split:
         split_paths = config.split_paths
@@ -135,12 +151,18 @@ def main() -> None:
         seed_path = create_seed_json(config, keywords_path)
 
     if args.skip_classification:
-        classified_paths = {}
-        print("[classify] skipped")
+        classified_paths = config.classified_paths
+        print("[classify] skipped; using existing classified files")
     else:
         classified_paths = classify_review_files(config, split_paths, seed_path)
 
-    _write_manifest(config, split_paths, keywords_path, seed_path, classified_paths)
+    if config.run_clustering:
+        clustered_paths = cluster_review_files(config, classified_paths)
+    else:
+        clustered_paths = {}
+        print("[cluster] skipped; use --run-clustering to create Non HR cluster files")
+
+    _write_manifest(config, split_paths, keywords_path, seed_path, classified_paths, clustered_paths)
     print("[pipeline] Completed")
 
 

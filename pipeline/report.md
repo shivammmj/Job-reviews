@@ -133,6 +133,7 @@ Each module now handles one small job:
 - `nlp_keyword_extraction.py` extracts frequent keywords.
 - `seed_expansion.py` creates `seed.json`.
 - `classify_reviews.py` assigns HR or Non HR labels.
+- `cluster_reviews.py` clusters only Non HR rows.
 - `main.py` runs all steps in order.
 
 This makes the project easier to understand and easier to extend.
@@ -180,7 +181,7 @@ pipeline/requirements-optional.txt
 
 The main requirements file contains the core dependencies.
 
-The optional requirements file contains UMAP and HDBSCAN for later clustering/visualization stages.
+The optional requirements file contains UMAP and HDBSCAN for the final `--run-clustering` stage and visualization work.
 
 This split is useful because `hdbscan` can sometimes be harder to install on Kaggle. The first HR/Non-HR classification pipeline does not need it.
 
@@ -255,6 +256,7 @@ pipeline/
   nlp_keyword_extraction.py
   seed_expansion.py
   classify_reviews.py
+  cluster_reviews.py
   requirements.txt
   requirements-optional.txt
 ```
@@ -758,6 +760,12 @@ Run embedding mode:
 python pipeline/main.py --seed-backend paper_embedding_expanded --classification-backend sentence_transformer
 ```
 
+Run final clustering:
+
+```bash
+python pipeline/main.py --seed-backend paper_embedding_expanded --classification-backend tfidf --run-clustering
+```
+
 Skip splitting if split files already exist:
 
 ```bash
@@ -780,6 +788,12 @@ Skip classification:
 
 ```bash
 python pipeline/main.py --skip-classification
+```
+
+Cluster existing classified files:
+
+```bash
+python pipeline/main.py --skip-split --skip-keywords --skip-seed --skip-classification --run-clustering
 ```
 
 ## 14. Dependency Files
@@ -809,7 +823,7 @@ Optional dependencies:
 pipeline/requirements-optional.txt
 ```
 
-Used for later:
+Used when final clustering or embedding visualization is enabled:
 
 - UMAP visualization
 - HDBSCAN density clustering
@@ -868,6 +882,15 @@ pipeline/data/outputs/likes_am_classified.csv
 pipeline/data/outputs/dislikes_am_classified.csv
 ```
 
+Final clustered Non HR files:
+
+```text
+pipeline/data/outputs/pros_gd_non_hr_clustered.csv
+pipeline/data/outputs/cons_gd_non_hr_clustered.csv
+pipeline/data/outputs/likes_am_non_hr_clustered.csv
+pipeline/data/outputs/dislikes_am_non_hr_clustered.csv
+```
+
 Run report:
 
 ```text
@@ -881,33 +904,39 @@ The manifest stores:
 - input/output paths
 - generated file locations
 
-## 17. What Is Not Done Yet
+## 17. Final Clustering Stage
 
-The current pipeline stops after HR/Non-HR classification.
+The pipeline now includes an optional final clustering stage.
 
-The next major stage is clustering.
+This stage:
 
-That means:
+- takes only `Non HR` rows from each classified file
+- creates SentenceTransformer embeddings
+- reduces embedding dimensions with UMAP
+- clusters organically with HDBSCAN
+- writes four clustered CSV files
 
-- Take only `Non HR` rows.
-- Generate embeddings.
-- Reduce dimensionality with UMAP.
-- Cluster using HDBSCAN or another method.
-- Compare clustering results with earlier `cluster_review_files.py` outputs.
-- Optionally use Llama models to label or validate clusters.
+The cluster output includes:
+
+- `cluster_id`
+- `is_cluster_noise`
+- `cluster_size`
+- `cluster_x`
+- `cluster_y`
+- `reducer_used`
+- `cluster_algorithm_used`
+
+If UMAP or HDBSCAN is unavailable, the module falls back to PCA or DBSCAN so the pipeline can still run in restricted environments.
 
 ## 18. Suggested Next Steps
 
 Recommended next work:
 
-1. Add a clustering module.
-2. Use only `Non HR` rows from the four classified files.
-3. Generate embeddings using SentenceTransformer.
-4. Use UMAP for 2D visualization.
-5. Use HDBSCAN for organic clustering.
-6. Save four clustered CSV files.
-7. Compare new pipeline clustering with previous clustering outputs.
-8. Add charts and cluster summary reports.
+1. Run clustering on a larger sample.
+2. Compare new pipeline clusters with previous `cluster_review_files.py` outputs.
+3. Add cluster summary reports with sample reviews per cluster.
+4. Add charts for cluster sizes and 2D cluster maps.
+5. Add optional Llama labels for cluster names.
 
 ## 19. Simple End-To-End Example
 
@@ -951,8 +980,9 @@ The pipeline can:
 - extract frequent keywords
 - build seed categories
 - classify each review as HR or Non HR
+- cluster Non HR reviews into organic groups
 - write clean output CSV files
 - run locally or on Kaggle
 - switch between TF-IDF and embedding-based methods
 
-This gives a stable base for the next stage: clustering only the `Non HR` review rows.
+This gives a stable base for comparing final Non HR clusters across Glassdoor and AmbitionBox review sides.

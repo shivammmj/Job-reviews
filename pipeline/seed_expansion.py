@@ -8,10 +8,10 @@ import pandas as pd
 
 try:
     from .config import PipelineConfig
-    from .utils import clean_text, unique_preserve_order, write_json
+    from .utils import configure_quiet_model_loading, clean_text, unique_preserve_order, write_json
 except ImportError:  # pragma: no cover
     from config import PipelineConfig
-    from utils import clean_text, unique_preserve_order, write_json
+    from utils import configure_quiet_model_loading, clean_text, unique_preserve_order, write_json
 
 
 BASE_SEED_CATEGORIES: dict[str, list[str]] = {
@@ -165,6 +165,7 @@ def _create_paper_embedding_expanded_seed(
     batch_size: int,
     top_n_per_category: int,
 ) -> dict:
+    configure_quiet_model_loading()
     from sentence_transformers import SentenceTransformer
 
     payload = _new_seed_payload("paper_embedding_expanded", model_id, threshold)
@@ -194,7 +195,7 @@ def _create_paper_embedding_expanded_seed(
         keywords,
         normalize_embeddings=True,
         batch_size=batch_size,
-        show_progress_bar=True,
+        show_progress_bar=False,
     )
     similarities = np.matmul(keyword_embeddings, centroid_matrix.T)
 
